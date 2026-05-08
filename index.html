@@ -362,6 +362,63 @@
     text-decoration: line-through;
   }
 
+  .check-item label {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .item-name { min-width: 0; }
+
+  .storage-tag {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    min-height: 22px;
+    border-radius: 999px;
+    padding: 3px 8px;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    text-decoration: none;
+  }
+
+  .storage-freeze {
+    background: rgba(132,183,201,.16);
+    border: 1px solid rgba(132,183,201,.38);
+    color: var(--blue);
+  }
+
+  .storage-cooked {
+    background: rgba(168,199,106,.14);
+    border: 1px solid rgba(168,199,106,.36);
+    color: var(--green);
+  }
+
+  .storage-fresh {
+    background: rgba(216,123,104,.14);
+    border: 1px solid rgba(216,123,104,.36);
+    color: var(--coral);
+  }
+
+  .storage-pantry {
+    background: rgba(212,173,93,.14);
+    border: 1px solid rgba(212,173,93,.36);
+    color: var(--amber);
+  }
+
+  .storage-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 0 22px 18px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
   .steps {
     margin: 0;
     padding: 0;
@@ -502,6 +559,9 @@
     .chip { width: calc(50% - 4px); justify-content: space-between; }
     .tab { flex: 1 1 120px; min-height: 42px; }
     .check-item input { width: 20px; height: 20px; }
+    .check-item label { flex-direction: column; gap: 5px; }
+    .storage-tag { width: fit-content; }
+    .storage-legend { padding: 0 14px 14px; }
   }
 
   @media print {
@@ -552,6 +612,12 @@
           <h2 class="page-title">Liste de courses deux semaines</h2>
         </div>
         <div class="page-meta"><strong>Poisson inclus</strong>sans crustacés ni mollusques</div>
+      </div>
+      <div class="storage-legend">
+        <span class="storage-tag storage-freeze">Congèle</span> cru ou portionné
+        <span class="storage-tag storage-cooked">Cuit OK</span> à congeler après cuisson
+        <span class="storage-tag storage-fresh">Frais</span> à garder au frigo, congélation déconseillée
+        <span class="storage-tag storage-pantry">Placard</span> pas besoin de froid
       </div>
       <div class="grocery-grid" id="groceryGrid"></div>
     </section>
@@ -849,8 +915,29 @@ const days = [
   }
 ];
 
-function checkbox(id, label) {
-  return `<li class="check-item"><input type="checkbox" id="${id}" data-save><label for="${id}">${label}</label></li>`;
+function storageFor(item, category) {
+  if (category === "Placard") return { label: "Placard", className: "storage-pantry" };
+
+  if (/Lentilles|Pois chiches|Haricots|Quinoa|Sarrasin|Orge|Pâtes/i.test(item)) {
+    return { label: "Cuit OK", className: "storage-cooked" };
+  }
+
+  if (/Sardines|maquereau en conserve|Huile|Noix|Amandes|Graines/i.test(item)) {
+    return { label: "Placard", className: "storage-pantry" };
+  }
+
+  if (/Salades|crudités|Pommes|Kiwis|Oranges|clémentines|Citrons|Avocats|Oeufs|Skyr|fromage blanc/i.test(item)) {
+    return { label: "Frais", className: "storage-fresh" };
+  }
+
+  if (/Ail/i.test(item)) return { label: "Placard", className: "storage-pantry" };
+
+  return { label: "Congèle", className: "storage-freeze" };
+}
+
+function checkbox(id, label, storage) {
+  const tag = storage ? `<span class="storage-tag ${storage.className}">${storage.label}</span>` : "";
+  return `<li class="check-item"><input type="checkbox" id="${id}" data-save><label for="${id}"><span class="item-name">${label}</span>${tag}</label></li>`;
 }
 
 function renderGroceries() {
@@ -859,7 +946,7 @@ function renderGroceries() {
     <article class="grocery-cat">
       <h3>${group[0]}</h3>
       <ul class="check-list">
-        ${group[1].map((item, itemIndex) => checkbox(`g-${groupIndex}-${itemIndex}`, item)).join("")}
+        ${group[1].map((item, itemIndex) => checkbox(`g-${groupIndex}-${itemIndex}`, item, storageFor(item, group[0]))).join("")}
       </ul>
     </article>
   `).join("");
